@@ -19,32 +19,6 @@ module Gorilla
 
   end
 
-  class Runner
-
-    # Singleton... ick!
-    def self.run!
-      @instance ||= new(ENV)
-      @instance.run!
-      @instance
-    end
-
-    def initialize(env)
-      @signature = Signature.new(env['COUNT_CALLS_TO'] || 'String.name')
-      @counter = Counter.new
-      @patcher = Patcher.new(signature: @signature, counter: @counter)
-      at_exit { p self.finalize }
-    end
-
-    def run!
-      @patcher.run!
-    end
-
-    def finalize
-      "#{@signature} called #{@counter} times"
-    end
-
-  end
-
   class Signature
 
     SPLIT = /#|\./
@@ -142,15 +116,26 @@ module Gorilla
   class Patcher
     attr_accessor :patched
 
-    def initialize(options)
+    class << self
+      protected :new, :clone, :dup
+    end
+
+    def self.instance
+      @instance ||= new
+    end
+
+    def count_calls_to
+      ENV['COUNT_CALLS_TO'] || 'String.name'
+    end
+
+    def initialize
       @written = false
-      @signature = options.delete(:signature)
-      @counter = options.delete(:counter) || Counter.new
-      if @signature.instance_method?
-        extend InstancePatcher
-      else
-        extend StaticPatcher
-      end
+      extend_adapter
+      at_exit { p self.finalize }
+    end
+
+    def finalize
+      "#{signature} called #{counter} times"
     end
 
     def run!
@@ -159,32 +144,48 @@ module Gorilla
 
     def patch_method
       @patched = true
-      overwrite_method(@signature) do
-        @counter.plusplus
+      overwrite_method(signature) do
+        counter.plusplus
+      end end
+
+    def needs_patch?
+      signature.exists? && !@patched
+    end
+
+    protected
+
+    def extend_adapter
+      if signature.instance_method?
+        extend InstancePatcher
+      else
+        extend StaticPatcher
       end
     end
 
-    def needs_patch?
-      @signature.exists? && !@patched
+    def signature
+      @signature ||= Signature.new(count_calls_to)
+    end
+
+    def counter
+      @counter ||= Counter.new
     end
 
   end
-
 
 end
 
 class Object
 
   def self.singleton_method_added(method_name)
-    Gorilla::Runner.run!
+    Gorilla::Patcher.instance.run!
   end
 
   def self.inherited(klass_name)
-    Gorilla::Runner.run!
+    Gorilla::Patcher.instance.run!
   end
 
   def self.method_added(method_name)
-    Gorilla::Runner.run!
+    Gorilla::Patcher.instance.run!
   end
 
 end
@@ -192,11 +193,13 @@ end
 class Module
 
   def included(klass_name)
-    Gorilla::Runner.run!
+    Gorilla::Patcher.instance.run!
   end
 
   def extended(klass_name)
-    Gorilla::Runner.run!
+    Gorilla::Patcher.instance.run!
   end
 
 end
+
+Gorilla::Patcher.instance.run!
