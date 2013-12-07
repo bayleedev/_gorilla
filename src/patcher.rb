@@ -29,15 +29,33 @@ module Gorilla
   class Patcher
     attr_accessor :patched
 
-    def initialize(options)
+    class << self
+      protected :new, :clone, :dup
+    end
+
+    def self.instance
+      @instance ||= new
+    end
+
+    def count_calls_to
+      ENV['COUNT_CALLS_TO'] || 'String.name'
+    end
+
+    # TODO fix large method
+    def initialize
       @written = false
-      @signature = options.delete(:signature)
-      @counter = options.delete(:counter) || Counter.new
+      @signature = Signature.new(count_calls_to)
+      @counter = Counter.new
       if @signature.instance_method?
         extend InstancePatcher
       else
         extend StaticPatcher
       end
+      at_exit { p self.finalize }
+    end
+
+    def finalize
+      "#{@signature} called #{@counter} times"
     end
 
     def run!
@@ -48,8 +66,7 @@ module Gorilla
       @patched = true
       overwrite_method(@signature) do
         @counter.plusplus
-      end
-    end
+      end end
 
     def needs_patch?
       @signature.exists? && !@patched

@@ -3,15 +3,15 @@
 class Object
 
   def self.singleton_method_added(method_name)
-    Gorilla::Runner.run!
+    Gorilla::Patcher.instance.run!
   end
 
   def self.inherited(klass_name)
-    Gorilla::Runner.run!
+    Gorilla::Patcher.instance.run!
   end
 
   def self.method_added(method_name)
-    Gorilla::Runner.run!
+    Gorilla::Patcher.instance.run!
   end
 
 end
@@ -19,11 +19,11 @@ end
 class Module
 
   def included(klass_name)
-    Gorilla::Runner.run!
+    Gorilla::Patcher.instance.run!
   end
 
   def extended(klass_name)
-    Gorilla::Runner.run!
+    Gorilla::Patcher.instance.run!
   end
 
 end

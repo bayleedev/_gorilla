@@ -4,8 +4,7 @@ require 'pry'
 dir = File.dirname(__FILE__)
 require "#{dir}/counter.rb"
 require "#{dir}/patcher.rb"
-require "#{dir}/runner.rb"
 require "#{dir}/signature.rb"
 require "#{dir}/watcher.rb"
 
-Gorilla::Runner.run!
+Gorilla::Patcher.instance.run!

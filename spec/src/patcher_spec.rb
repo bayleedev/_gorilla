@@ -2,7 +2,19 @@ require 'spec_helper'
 
 describe Gorilla::Patcher do
 
-  subject { Gorilla::Patcher.new(signature: signature) }
+  subject { Gorilla::Patcher.send(:send, signature: signature) }
+
+  describe '.instance' do
+
+    it 'returns instance of self' do
+      expect(Gorilla::Patcher.instance).to be_a(Gorilla::Patcher)
+    end
+
+    it 'returns same instance twice' do
+      expect(Gorilla::Patcher.instance).to eq(Gorilla::Patcher.run!)
+    end
+
+  end
 
   describe '.new' do
 
