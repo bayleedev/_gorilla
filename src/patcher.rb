@@ -41,21 +41,14 @@ module Gorilla
       ENV['COUNT_CALLS_TO'] || 'String.name'
     end
 
-    # TODO fix large method
     def initialize
       @written = false
-      @signature = Signature.new(count_calls_to)
-      @counter = Counter.new
-      if @signature.instance_method?
-        extend InstancePatcher
-      else
-        extend StaticPatcher
-      end
+      extend_adapter
       at_exit { p self.finalize }
     end
 
     def finalize
-      "#{@signature} called #{@counter} times"
+      "#{signature} called #{counter} times"
     end
 
     def run!
@@ -64,12 +57,30 @@ module Gorilla
 
     def patch_method
       @patched = true
-      overwrite_method(@signature) do
-        @counter.plusplus
+      overwrite_method(signature) do
+        counter.plusplus
       end end
 
     def needs_patch?
-      @signature.exists? && !@patched
+      signature.exists? && !@patched
+    end
+
+    protected
+
+    def extend_adapter
+      if signature.instance_method?
+        extend InstancePatcher
+      else
+        extend StaticPatcher
+      end
+    end
+
+    def signature
+      @signature ||= Signature.new(count_calls_to)
+    end
+
+    def counter
+      @counter ||= Counter.new
     end
 
   end
