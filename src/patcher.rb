@@ -27,7 +27,6 @@ module Gorilla
   # In charge of patching new static methods and setting up a watcher
   # for future patches
   class Patcher
-    attr_accessor :patched
 
     class << self
       protected :new, :clone, :dup
@@ -42,9 +41,7 @@ module Gorilla
     end
 
     def initialize
-      @written = false
       extend_adapter
-      at_exit { p self.finalize }
     end
 
     def finalize
@@ -53,6 +50,7 @@ module Gorilla
 
     def run!
       patch_method if needs_patch?
+      at_exit { p self.finalize }
     end
 
     def patch_method

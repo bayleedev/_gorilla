@@ -3,7 +3,6 @@ require 'pry'
 dir = File.dirname(__FILE__) + "/../src"
 require "#{dir}/counter.rb"
 require "#{dir}/patcher.rb"
-require "#{dir}/runner.rb"
 require "#{dir}/signature.rb"
 
 
